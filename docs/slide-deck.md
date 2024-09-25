@@ -2,8 +2,8 @@
 marp: true
 theme: default
 class:
-    - lead
-    - invert
+  - lead
+  - invert
 ---
 
 # Getting Started with AWS Cloud Development Kit
@@ -18,21 +18,21 @@ Sept 2024
 
 ![bg left:35%](./img/me.png)
 
--   10 years experience with Azure & AWS
--   5 years experience with CDK, released in 2019
--   I enjoy leveraging automation to reduce toil
+- 10 years experience with Azure & AWS
+- 5 years experience with CDK, released in 2019
+- I enjoy leveraging automation to reduce toil
 
 ---
 
 # Overview
 
--   What is AWS CDK?
--   An Example Project
--   Under the Hood
--   Useful CDK Features
--   When to use CDK (and when not to)
--   Recommendations
--   Wrap Up
+- What is AWS CDK?
+- An Example Project
+- Under the Hood
+- Useful CDK Features
+- When to use CDK (and when not to)
+- Recommendations
+- Wrap Up
 
 ---
 
@@ -44,23 +44,23 @@ From AWS:
 
 In Reality:
 
--   A software framework to programmatically build and deploy CloudFormation templates.
--   A mechanism to abstract away some of the complexity of CloudFormation
--   Enables developers to focus on defining the application instead of the infrastructure
+- A software framework to programmatically build and deploy CloudFormation templates.
+- A mechanism to abstract away some of the complexity of CloudFormation
+- Enables developers to focus on defining the application instead of the infrastructure
 
 ---
 
 # What CDK is NOT
 
--   A silver bullet for all infrastructure needs
--   A replacement for understanding the underlying services
+- A silver bullet for all infrastructure needs
+- A replacement for understanding the underlying services
 
 ---
 
 ## Language support
 
--   Supports TypeScript, JavaScript, Python, Java, C#, Go (Preview)
--   TypeScript is generally the most feature-rich
+- Supports TypeScript, JavaScript, Python, Java, C#, Go (Preview)
+- TypeScript is generally the most feature-rich
 
 ---
 
@@ -101,8 +101,8 @@ cdk init app --language typescript
 
 A few preferences:
 
--   `bin` -> the entry point
--   `lib` -> infrastructure definitions
+- `bin` -> the entry point
+- `lib` -> infrastructure definitions
 
 ---
 
@@ -110,12 +110,12 @@ A few preferences:
 
 ```typescript
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib';
-import 'source-map-support/register';
-import { DevTipsAppStack } from '../lib/app-stack';
+import * as cdk from "aws-cdk-lib";
+import "source-map-support/register";
+import { DevTipsAppStack } from "../lib/app-stack";
 
 const app = new cdk.App();
-new DevTipsAppStack(app, 'DevTipsApp', {});
+new DevTipsAppStack(app, "DevTipsApp", {});
 ```
 
 ---
@@ -123,19 +123,19 @@ new DevTipsAppStack(app, 'DevTipsApp', {});
 ## Stack
 
 ```typescript
-import * as cdk from 'aws-cdk-lib';
-import * as nodeLambda from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
+import { Construct } from "constructs";
 
 export class DevTipsAppStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-        super(scope, id, props);
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
 
-        new nodeLambda.NodejsFunction(this, 'handler', {
-            entry: 'lib/app-stack.handler.ts',
-            handler: 'handler',
-        });
-    }
+    new nodeLambda.NodejsFunction(this, "handler", {
+      entry: "lib/app-stack.handler.ts",
+      handler: "handler",
+    });
+  }
 }
 ```
 
@@ -144,21 +144,21 @@ export class DevTipsAppStack extends cdk.Stack {
 ## Stack - Lambda Handler
 
 ```typescript
-import { Handler } from 'aws-lambda';
-import { ProgrammingTipsRepository } from './src/tips-generator-data';
+import { Handler } from "aws-lambda";
+import { ProgrammingTipsRepository } from "./src/tips-generator-data";
 
 export const handler: Handler = async (event, context) => {
-    console.info('event:', event);
+  console.info("event:", event);
 
-    const tips = new ProgrammingTipsRepository();
-    const tip = tips.get();
+  const tips = new ProgrammingTipsRepository();
+  const tip = tips.get();
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-            message: tip,
-        }),
-    };
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: tip,
+    }),
+  };
 };
 ```
 
@@ -236,21 +236,18 @@ Under the hood, CDK is programmatically creating/deploying CloudFormation templa
 
 ## Code Bundling
 
-CDK will bundle Node.js code for Lambda functions using esbuild by default
+CDK will bundle Node.js code for Lambda functions
 
 ```typescript
-new nodeLambda.NodejsFunction(this, 'handler', {
-    entry: 'lib/dev-tips-app-stack.handler.ts',
-    handler: 'handler',
+new nodeLambda.NodejsFunction(this, "handler", {
+  entry: "lib/dev-tips-app-stack.handler.ts",
+  handler: "handler",
 
-    // adding optional bundling configuration
-    bundling: {
-        minify: true,
-        sourceMap: true,
-        externalModules: ['aws-sdk'],
-        nodeModules: ['axios'],
-        esbuildArgs: { 'log-limit': '0' },
-    },
+  // adding optional bundling configuration
+  bundling: {
+    minify: true,
+    sourceMap: true,
+  },
 });
 ```
 
@@ -262,59 +259,59 @@ We can see the generated artifacts in the `cdk.out` folder
 
 ```json
 {
-    "Resources": {
-        "handlerServiceRole187D5A5A": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {
-                            "Action": "sts:AssumeRole",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            }
-                        }
-                    ],
-                    "Version": "2012-10-17"
-                },
-                "ManagedPolicyArns": [
-                    {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "arn:",
-                                {
-                                    "Ref": "AWS::Partition"
-                                },
-                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                            ]
-                        ]
-                    }
-                ]
-            },
-            "Metadata": {
-                "aws:cdk:path": "DevTipsApp/handler/ServiceRole/Resource"
+  "Resources": {
+    "handlerServiceRole187D5A5A": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
             }
+          ],
+          "Version": "2012-10-17"
         },
-        "handlerE1533BD5": {
-            "Type": "AWS::Lambda::Function",
-            "Properties": {
-                "Code": {
-                    "S3Bucket": {
-                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
-                    },
-                    "S3Key": "c9b0cc8804636a4a40d61a699ea1cc914bd8fd712db2b783e6d9c983df28f8fa.zip"
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
                 },
-                "Handler": "index.handler",
-                "Role": {
-                    "Fn::GetAtt": ["handlerServiceRole187D5A5A", "Arn"]
-                },
-                "Runtime": "nodejs18.x"
-            },
-            "DependsOn": ["handlerServiceRole187D5A5A"]
-        }
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DevTipsApp/handler/ServiceRole/Resource"
+      }
+    },
+    "handlerE1533BD5": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+          },
+          "S3Key": "c9b0cc8804636a4a40d61a699ea1cc914bd8fd712db2b783e6d9c983df28f8fa.zip"
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": ["handlerServiceRole187D5A5A", "Arn"]
+        },
+        "Runtime": "nodejs18.x"
+      },
+      "DependsOn": ["handlerServiceRole187D5A5A"]
     }
+  }
 }
 ```
 
@@ -332,36 +329,40 @@ We can see the generated artifacts in the `cdk.out` folder
 
 ## Constructs
 
--   L1: Thin abstraction layer with direct mapping to CloudFormation
--   L2: Abstractions over L1
--   L3: Shareable chunks of infrastructure
+- L1: Thin abstraction layer with direct mapping to CloudFormation
+- L2: Abstractions over L1
+- L3: Shareable chunks of infrastructure
 
 ---
 
 ```typescript
 // L1 Construct
-new CfnRole(this, 'Role1', {
-    assumeRolePolicyDocument: {
-        Version: '2012-10-17',
-        Statement: [
-            {
-                Effect: 'Allow',
-                Principal: {
-                    Service: 'lambda.amazonaws.com',
-                },
-                Action: 'sts:AssumeRole',
-            },
-        ],
-    },
-    description: 'Example role',
-    managedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'],
+new CfnRole(this, "Role1", {
+  assumeRolePolicyDocument: {
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Principal: {
+          Service: "lambda.amazonaws.com",
+        },
+        Action: "sts:AssumeRole",
+      },
+    ],
+  },
+  description: "Example role",
+  managedPolicyArns: [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+  ],
 });
 
 // L2 Construct
-new Role(this, 'Role2', {
-    description: 'Example role',
-    assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-    managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('AwsLambdaBasicExecutionRole')],
+new Role(this, "Role2", {
+  description: "Example role",
+  assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+  managedPolicies: [
+    ManagedPolicy.fromAwsManagedPolicyName("AwsLambdaBasicExecutionRole"),
+  ],
 });
 ```
 
@@ -407,34 +408,34 @@ The [L2 Code](https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-
 
 ```typescript
 // example call from the App
-new SampleProcessorStack(app, 'SampleProcessor', { timeout: 60 });
+new SampleProcessorStack(app, "SampleProcessor", { timeout: 60 });
 
 // L3 Construct
 export interface SampleProcessorStack extends cdk.StackProps {
-    readonly timeout: number;
+  readonly timeout: number;
 }
 
 export class SampleProcessorStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props: ExampleL3ConstructProps) {
-        super(scope, id, props);
+  constructor(scope: Construct, id: string, props: ExampleL3ConstructProps) {
+    super(scope, id, props);
 
-        const queue = new sqs.Queue(this, 'InputQueue', {
-            visibilityTimeout: cdk.Duration.seconds(props.timeout),
-        });
+    const queue = new sqs.Queue(this, "InputQueue", {
+      visibilityTimeout: cdk.Duration.seconds(props.timeout),
+    });
 
-        const lambdaFn = new lambda.Function(this, 'MyFunction', {
-            code: lambda.Code.fromInline(
-                'exports.handler = function(event) { console.info(event) }'
-            ),
-            runtime: lambda.Runtime.NODEJS_20_X,
-            handler: 'index.handler',
-            timeout: cdk.Duration.seconds(props.timeout),
-            events: [new lambdaEventSource.SqsEventSource(queue)],
-        });
+    const lambdaFn = new lambda.Function(this, "MyFunction", {
+      code: lambda.Code.fromInline(
+        "exports.handler = function(event) { console.info(event) }"
+      ),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "index.handler",
+      timeout: cdk.Duration.seconds(props.timeout),
+      events: [new lambdaEventSource.SqsEventSource(queue)],
+    });
 
-        const topic = new sns.Topic(this, 'OutputTopic', {});
-        topic.grantPublish(lambdaFn);
-    }
+    const topic = new sns.Topic(this, "OutputTopic", {});
+    topic.grantPublish(lambdaFn);
+  }
 }
 ```
 
@@ -442,9 +443,9 @@ export class SampleProcessorStack extends cdk.Stack {
 
 ## Construct Takeaways
 
--   Constructs are just object-oriented abstractions over CloudFormation
--   Constructs benefit from object-oriented principles like inheritance and composition
--   Constructs offer quality-of-life improvements like the IAM convenience methods
+- Constructs are just object-oriented abstractions over CloudFormation
+- Constructs benefit from object-oriented principles like inheritance and composition
+- Constructs offer quality-of-life improvements like the IAM convenience methods
 
 ---
 
@@ -456,23 +457,23 @@ export class SampleProcessorStack extends cdk.Stack {
 
 ```typescript
 class BucketVersioningChecker implements IAspect {
-    public visit(node: IConstruct): void {
-        // See that we're dealing with a CfnBucket
-        if (node instanceof s3.CfnBucket) {
-            // Check for versioning property, exclude the case where the property
-            // can be a token (IResolvable).
-            if (
-                !node.versioningConfiguration ||
-                (!Tokenization.isResolvable(node.versioningConfiguration) &&
-                    node.versioningConfiguration.status !== 'Enabled')
-            ) {
-                // Do ONE of the following:
-                Annotations.of(node).addError('Bucket versioning is not enabled');
-                Annotations.of(node).addWarning('Bucket versioning is not enabled');
-                throw new Error('Bucket versioning is not enabled');
-            }
-        }
+  public visit(node: IConstruct): void {
+    // See that we're dealing with a CfnBucket
+    if (node instanceof s3.CfnBucket) {
+      // Check for versioning property, exclude the case where the property
+      // can be a token (IResolvable).
+      if (
+        !node.versioningConfiguration ||
+        (!Tokenization.isResolvable(node.versioningConfiguration) &&
+          node.versioningConfiguration.status !== "Enabled")
+      ) {
+        // Do ONE of the following:
+        Annotations.of(node).addError("Bucket versioning is not enabled");
+        Annotations.of(node).addWarning("Bucket versioning is not enabled");
+        throw new Error("Bucket versioning is not enabled");
+      }
     }
+  }
 }
 
 // Later, apply to the stack
@@ -485,10 +486,10 @@ Aspects.of(stack).add(new BucketVersioningChecker());
 
 ```typescript
 const app = new cdk.App();
-Tags.of(app).add('Environment', 'Development');
+Tags.of(app).add("Environment", "Development");
 
-const controlPlane = new cdk.Stack(app, 'ControlPlane');
-Tags.of(controlPlane).add('purpose', 'Access Management');
+const controlPlane = new cdk.Stack(app, "ControlPlane");
+Tags.of(controlPlane).add("purpose", "Access Management");
 ```
 
 ---
@@ -497,15 +498,15 @@ Tags.of(controlPlane).add('purpose', 'Access Management');
 
 ```typescript
 export class MonitoringPlane extends cdk.Stack {
-    public readonly LogGroup: logs.ILogGroup;
+  public readonly LogGroup: logs.ILogGroup;
 
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-        super(scope, id, props);
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
 
-        this.LogGroup = new logs.LogGroup(this, 'LogGroup', {
-            logGroupName: 'my-log-group',
-        });
-    }
+    this.LogGroup = new logs.LogGroup(this, "LogGroup", {
+      logGroupName: "my-log-group",
+    });
+  }
 }
 ```
 
@@ -513,17 +514,17 @@ export class MonitoringPlane extends cdk.Stack {
 
 ```typescript
 export interface ApplicationPlaneProps extends cdk.StackProps {
-    readonly logGroup: logs.ILogGroup;
+  readonly logGroup: logs.ILogGroup;
 }
 
 export class ApplicationPlane extends cdk.Stack {
-    constructor(scope: Construct, id: string, props: ApplicationPlaneProps) {
-        super(scope, id, props);
+  constructor(scope: Construct, id: string, props: ApplicationPlaneProps) {
+    super(scope, id, props);
 
-        new nodeLambda.NodejsFunction(this, 'my-function', {
-            logGroup: props.logGroup,
-        });
-    }
+    new nodeLambda.NodejsFunction(this, "my-function", {
+      logGroup: props.logGroup,
+    });
+  }
 }
 ```
 
@@ -531,9 +532,9 @@ export class ApplicationPlane extends cdk.Stack {
 
 ```typescript
 const app = new cdk.App();
-const monitoringPlane = new MonitoringPlane(app, 'MonitoringPlane');
-new ApplicationPlane(app, 'ApplicationPlane', {
-    logGroup: monitoringPlane.LogGroup,
+const monitoringPlane = new MonitoringPlane(app, "MonitoringPlane");
+new ApplicationPlane(app, "ApplicationPlane", {
+  logGroup: monitoringPlane.LogGroup,
 });
 ```
 
@@ -543,13 +544,13 @@ new ApplicationPlane(app, 'ApplicationPlane', {
 
 ```typescript
 const logGroup = logs.LogGroup.fromLogGroupArn(
-    this,
-    'LogGroup',
-    'arn:aws:logs:us-west-2:123456789012:log-group:/aws/lambda/my-function:*'
+  this,
+  "LogGroup",
+  "arn:aws:logs:us-west-2:123456789012:log-group:/aws/lambda/my-function:*"
 );
 
-new nodeLambda.NodejsFunction(this, 'my-function', {
-    logGroup,
+new nodeLambda.NodejsFunction(this, "my-function", {
+  logGroup,
 });
 ```
 
@@ -558,18 +559,18 @@ new nodeLambda.NodejsFunction(this, 'my-function', {
 ## Context Values
 
 ```bash
-cdk deploy --context LogGroup=MyLogGroup
+cdk deploy --context LogGroupName=MyLogGroup
 ```
 
 ```typescript
-const companyName = this.node.tryGetContext('LogGroup');
+const logGroupName = this.node.tryGetContext("LogGroupName");
 
-const logGroup = companyName
-    ? logs.LogGroup.fromLogGroupName(this, 'LogGroup', companyName)
-    : new logs.LogGroup(this, 'LogGroup', { logGroupName: 'default-log-group' });
+const logGroup = logGroupName
+  ? logs.LogGroup.fromLogGroupName(this, "LogGroup", logGroupName)
+  : new logs.LogGroup(this, "LogGroup", { logGroupName: "default-log-group" });
 
-new nodeLambda.NodejsFunction(this, 'my-function', {
-    logGroup,
+new nodeLambda.NodejsFunction(this, "my-function", {
+  logGroup,
 });
 ```
 
@@ -578,14 +579,14 @@ new nodeLambda.NodejsFunction(this, 'my-function', {
 ## Testing
 
 ```typescript
-it('should have a DESTROY removal policy', () => {
-    const app = new cdk.App();
-    const stack = new RemovalPolicyStack(app, 'MyTestStack');
-    const template = Template.fromStack(stack);
+it("should have a DESTROY removal policy", () => {
+  const app = new cdk.App();
+  const stack = new RemovalPolicyStack(app, "MyTestStack");
+  const template = Template.fromStack(stack);
 
-    template.hasResource('AWS::DynamoDB::Table', {
-        DeletionPolicy: 'Delete',
-    });
+  template.hasResource("AWS::DynamoDB::Table", {
+    DeletionPolicy: "Delete",
+  });
 });
 ```
 
@@ -597,13 +598,13 @@ it('should have a DESTROY removal policy', () => {
 cdk destroy
 ```
 
-Some resources may not be deleted by `cdk destroy` based on resource policy. Typically, data-related resources like S3 buckets, RDS instances, etc. are not deleted by default.
+Some resources may not be deleted by `cdk destroy` based on resource policy.
 
 ```typescript
 // we can set the retention policy explicitly
-const table = new dynamodb.Table(this, 'Table', {
-    partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-    removalPolicy: cdk.RemovalPolicy.DESTROY,
+const table = new dynamodb.Table(this, "Table", {
+  partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+  removalPolicy: cdk.RemovalPolicy.DESTROY,
 });
 ```
 
@@ -613,11 +614,11 @@ const table = new dynamodb.Table(this, 'Table', {
 
 When you want to...
 
--   invest in AWS abstractions over in-code solutions
--   leverage the power of CloudFormation without the complexity
--   use a programming language to define your infrastructure
--   share infrastructure definitions across teams
--   'Lint' your infrastructure definitions
+- invest in AWS abstractions over in-code solutions
+- leverage the power of CloudFormation without the complexity
+- use a programming language to define your infrastructure
+- share infrastructure definitions across teams
+- 'Lint' your infrastructure definitions
 
 ---
 
@@ -625,11 +626,11 @@ When you want to...
 
 When you...
 
--   work in a team heavily invested in other IaC tools (Terraform, Pulumi, etc.)
--   work in a team that is not comfortable with programming
--   are not familiar with the underlying AWS services
--   are not comfortable with the CDK learning curve
--   are not comfortable with the CDK's abstraction
+- work in a team heavily invested in other IaC tools (Terraform, Pulumi, etc.)
+- work in a team that is not comfortable with programming
+- are not familiar with the underlying AWS services
+- are not comfortable with the CDK learning curve
+- are not comfortable with the CDK's abstraction
 
 ---
 
@@ -647,9 +648,9 @@ When you...
 
 # Resources
 
--   CDK Workshop:
-    https://cdkworkshop.com
--   AWS CDK Reference Documentation
-    https://docs.aws.amazon.com/cdk/api/v2/
--   AWS CDK Developer Guide
-    https://docs.aws.amazon.com/cdk/v2/guide
+- CDK Workshop:
+  https://cdkworkshop.com
+- AWS CDK Reference Documentation
+  https://docs.aws.amazon.com/cdk/api/v2/
+- AWS CDK Developer Guide
+  https://docs.aws.amazon.com/cdk/v2/guide
