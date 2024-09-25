@@ -1,0 +1,18 @@
+graph TD
+    App
+    Stack1[Stack 1]
+    Stack2[Stack 2]
+    ConstructA[Construct A]
+    ConstructB[Construct B]
+    ConstructC[Construct C]
+    ConstructD[Construct D]
+    ConstructE[Construct E]
+
+    App --> Stack1 & Stack2
+    Stack1 --> ConstructA & ConstructB
+    Stack2 --> ConstructB & ConstructC
+    ConstructA --> ConstructD
+    ConstructB --> ConstructD & ConstructE
+
+
+    

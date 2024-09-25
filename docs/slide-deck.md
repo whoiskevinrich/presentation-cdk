@@ -26,6 +26,14 @@ Sept 2024
 
 # Overview
 
+-   What is AWS CDK?
+-   An Example Project
+-   Under the Hood
+-   Useful CDK Features
+-   When to use CDK (and when not to)
+-   Recommendations
+-   Wrap Up
+
 ---
 
 # What is CDK?
@@ -36,83 +44,40 @@ From AWS:
 
 In Reality:
 
-> A software framework to programmatically build and deploy CloudFormation templates
+-   A software framework to programmatically build and deploy CloudFormation templates.
+-   A mechanism to abstract away some of the complexity of CloudFormation
+-   Enables developers to focus on defining the application instead of the infrastructure
 
 ---
 
-# A Bit of History
+# What CDK is NOT
 
--   AWS was made available in 2006
--   CloudFormation was released in 2011
--   CDK was released in 2019
-
----
-
-# A Basic CDK APP
-
-The CDK App describes the infrastructure to deploy using "Stacks"
-
-```typescript
-// the app defines the entry point
-const app = new cdk.App();
-
-// apps are composed of stacks
-const dataLayer = new cdk.DataStack(app, 'MyAppDataLayer');
-const website = new cdk.WebsiteStack(app, 'MyAppWebsite');
-```
+-   A silver bullet for all infrastructure needs
+-   A replacement for understanding the underlying services
 
 ---
 
-# Deployment
+## Language support
 
-We deploy stacks using the `cdk deploy` command
-
-```powershell
-> cdk deploy
-
-```
+-   Supports TypeScript, JavaScript, Python, Java, C#, Go (Preview)
+-   TypeScript is generally the most feature-rich
 
 ---
 
-# Constructs
-
-Resources in CDK are assembled using _Constructs_
-Here is an example of an out-of-the-box construct to create a CloudWatch Log Group
-
-```typescript
-
-```
+# An Example Project
 
 ---
 
-# Recommendations
+## Prerequisites
 
-1. Understand the AWS Services before provisioning them
-
-2. If provisioning an account to learn, secure it immediately and set budget alerts.
-
----
-
-# Questions?
-
-> "The only stupid question is the one not asked"
-
-# Resources
-
--   CDK Workshop: [cdkworkshop.com](https://cdkworkshop.com/)
-
----
-
-# Prerequisites
-
-## Local tools
+### Local tools
 
 ```bash
 npm install -g typescript
 npm install -g aws-cdk
 ```
 
-## AWS Account
+### AWS Account
 
 ```bash
 cdk bootstrap aws://123456789012/us-west-2
@@ -120,7 +85,7 @@ cdk bootstrap aws://123456789012/us-west-2
 
 ---
 
-# Create the project
+## Create the project
 
 ```bash
 mkdir dev-tips
@@ -130,7 +95,7 @@ cdk init app --language typescript
 
 ---
 
-# Folder Structure
+## Folder Structure
 
 ![bg left:33%](./img/folder-structure.jpg)
 
@@ -141,7 +106,7 @@ A few preferences:
 
 ---
 
-# Entry Point
+## Entry Point
 
 ```typescript
 #!/usr/bin/env node
@@ -155,7 +120,7 @@ new DevTipsAppStack(app, 'DevTipsApp', {});
 
 ---
 
-# Stack
+## Stack
 
 ```typescript
 import * as cdk from 'aws-cdk-lib';
@@ -176,7 +141,7 @@ export class DevTipsAppStack extends cdk.Stack {
 
 ---
 
-# Stack - Lambda Handler
+## Stack - Lambda Handler
 
 ```typescript
 import { Handler } from 'aws-lambda';
@@ -199,7 +164,7 @@ export const handler: Handler = async (event, context) => {
 
 ---
 
-# Deployment
+## Deployment
 
 ```text
 > cdk deploy
@@ -257,17 +222,41 @@ arn:aws:cloudformation:us-west-2:058308164167:stack/DevTipsApp/51097140-7907-11e
 
 ---
 
-# How it works
-
-Under the hood, CDK is programmatically creating/deploying CloudFormation templates by:
-
-1. Bundling any application code into a zip file
-2. Synthesizing CloudFormation templates from Stacks
-3. Deploying the CloudFormation template
+## Under the Hood
 
 ---
 
-# Generated CloudFormation
+## How Deployments Work
+
+Under the hood, CDK is programmatically creating/deploying CloudFormation templates
+
+![](./diagrams/cdk-deploy.mermaid.png)
+
+---
+
+## Code Bundling
+
+CDK will bundle Node.js code for Lambda functions using esbuild by default
+
+```typescript
+new nodeLambda.NodejsFunction(this, 'handler', {
+    entry: 'lib/dev-tips-app-stack.handler.ts',
+    handler: 'handler',
+
+    // adding optional bundling configuration
+    bundling: {
+        minify: true,
+        sourceMap: true,
+        externalModules: ['aws-sdk'],
+        nodeModules: ['axios'],
+        esbuildArgs: { 'log-limit': '0' },
+    },
+});
+```
+
+---
+
+## CloudFormation Template Synthesis
 
 We can see the generated artifacts in the `cdk.out` folder
 
@@ -331,108 +320,336 @@ We can see the generated artifacts in the `cdk.out` folder
 
 ---
 
-# Why Not Just Use CloudFormation?
+## How Synthesis Works
 
--   Abstraction
--   Testability
--   Coding Languages
+<style scoped>
+    p { text-align: center; }
+</style>
 
----
-
-# Abstraction
-
-Earlier we saw this:
-
-```typescript
-new nodeLambda.NodejsFunction(this, 'handler', {
-    entry: 'lib/app-stack.handler.ts',
-    handler: 'handler',
-});
-```
+![](./diagrams/cdk-nodes.mermaid.png)
 
 ---
 
-## Abstraction - L1 Constructs
+## Constructs
 
-Deep in the bowels of the [CDK source code](https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-lambda/lib/function.ts) we find:
+-   L1: Thin abstraction layer with direct mapping to CloudFormation
+-   L2: Abstractions over L1
+-   L3: Shareable chunks of infrastructure
+
+---
 
 ```typescript
-const resource: CfnFunction = new CfnFunction(this, 'Resource', {
-    functionName: this.physicalName,
-    description: props.description,
-    code: {
-        s3Bucket: code.s3Location && code.s3Location.bucketName,
-        s3Key: code.s3Location && code.s3Location.objectKey,
-        s3ObjectVersion: code.s3Location && code.s3Location.objectVersion,
-        zipFile: code.inlineCode,
-        imageUri: code.image?.imageUri,
+// L1 Construct
+new CfnRole(this, 'Role1', {
+    assumeRolePolicyDocument: {
+        Version: '2012-10-17',
+        Statement: [
+            {
+                Effect: 'Allow',
+                Principal: {
+                    Service: 'lambda.amazonaws.com',
+                },
+                Action: 'sts:AssumeRole',
+            },
+        ],
     },
-    layers: Lazy.list({ produce: () => this.renderLayers() }), // Evaluated on synthesis
-    handler: props.handler === Handler.FROM_IMAGE ? undefined : props.handler,
-    timeout: props.timeout && props.timeout.toSeconds(),
-    packageType: props.runtime === Runtime.FROM_IMAGE ? 'Image' : undefined,
-    runtime: props.runtime === Runtime.FROM_IMAGE ? undefined : props.runtime.name,
-    role: this.role.roleArn,
-    environment: Lazy.uncachedAny({ produce: () => this.renderEnvironment() }),
-    memorySize: props.memorySize,
-    ephemeralStorage: props.ephemeralStorageSize
-        ? {
-              size: props.ephemeralStorageSize.toMebibytes(),
-          }
-        : undefined,
-    vpcConfig: this.configureVpc(props),
-    deadLetterConfig: this.buildDeadLetterConfig(dlqTopicOrQueue),
-    reservedConcurrentExecutions: props.reservedConcurrentExecutions,
-    imageConfig: undefinedIfNoKeys({
-        command: code.image?.cmd,
-        entryPoint: code.image?.entrypoint,
-        workingDirectory: code.image?.workingDirectory,
-    }),
-    kmsKeyArn: props.environmentEncryption?.keyArn,
-    fileSystemConfigs,
-    codeSigningConfigArn: props.codeSigningConfig?.codeSigningConfigArn,
-    architectures: this._architecture ? [this._architecture.name] : undefined,
-    runtimeManagementConfig: props.runtimeManagementMode?.runtimeManagementConfig,
-    snapStart: this.configureSnapStart(props),
-    loggingConfig: this.getLoggingConfig(props),
-    recursiveLoop: props.recursiveLoop,
+    description: 'Example role',
+    managedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'],
+});
+
+// L2 Construct
+new Role(this, 'Role2', {
+    description: 'Example role',
+    assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+    managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('AwsLambdaBasicExecutionRole')],
 });
 ```
 
 ---
 
-## Abstraction - L2 Constructs
+## L2 Abstraction
 
-The L2 Constructs abstract away the need for us to know the L1 details.
+The [L2 Code](https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-iam/lib/role.ts) handles the trivia of building the Raw CloudFormation JSON
 
 ```typescript
-new nodeLambda.NodejsFunction(this, 'handler', {
-    entry: 'lib/app-stack.handler.ts',
-    handler: 'handler',
-});
-```
+  constructor(scope: Construct, id: string, props: RoleProps) {
+    super(scope, id, {
+      physicalName: props.roleName,
+    });
 
-Did you notice the automagically created IAM Role in the CloudFormation Template?
+    if (props.roleName && !Token.isUnresolved(props.roleName) && !/^[\w+=,.@-]{1,64}$/.test(props.roleName)) {
+      throw new Error('Invalid roleName. <...abbreviated...>');
+    }
 
-```json
-"Resources": {
-    "handlerServiceRole187D5A5A": {
-        "Type": "AWS::IAM::Role",
-        "Properties": {
-            "AssumeRolePolicyDocument": {
-                "Statement": [{
-                        "Action": "sts:AssumeRole",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": "lambda.amazonaws.com"
+    const externalIds = props.externalIds || [];
+    if (props.externalId) {
+      externalIds.push(props.externalId);
+    }
+
+    this.assumeRolePolicy = createAssumeRolePolicy(props.assumedBy, externalIds);
+    this.managedPolicies.push(...props.managedPolicies || []);
+    this.inlinePolicies = props.inlinePolicies || {};
+    this.permissionsBoundary = props.permissionsBoundary;
+    const maxSessionDuration = props.maxSessionDuration && props.maxSessionDuration.toSeconds();
+    validateMaxSessionDuration(maxSessionDuration);
+    const description = (props.description && props.description?.length > 0) ? props.description : undefined;
+
+    if (description && description.length > 1000) {
+      throw new Error('Role description must be no longer than 1000 characters.');
+    }
 ```
 
 ---
 
-## Abstraction - L3 Constructs
+## Likewise, we can abstract L2 Constructs with an L3 Construct
 
-We can further build abstractions on top of the L2 constructs. Let's say we wanted to wire up an input queue and output topic to our Lambda:
+---
 
 ```typescript
+// example call from the App
+new SampleProcessorStack(app, 'SampleProcessor', { timeout: 60 });
 
+// L3 Construct
+export interface SampleProcessorStack extends cdk.StackProps {
+    readonly timeout: number;
+}
+
+export class SampleProcessorStack extends cdk.Stack {
+    constructor(scope: Construct, id: string, props: ExampleL3ConstructProps) {
+        super(scope, id, props);
+
+        const queue = new sqs.Queue(this, 'InputQueue', {
+            visibilityTimeout: cdk.Duration.seconds(props.timeout),
+        });
+
+        const lambdaFn = new lambda.Function(this, 'MyFunction', {
+            code: lambda.Code.fromInline(
+                'exports.handler = function(event) { console.info(event) }'
+            ),
+            runtime: lambda.Runtime.NODEJS_20_X,
+            handler: 'index.handler',
+            timeout: cdk.Duration.seconds(props.timeout),
+            events: [new lambdaEventSource.SqsEventSource(queue)],
+        });
+
+        const topic = new sns.Topic(this, 'OutputTopic', {});
+        topic.grantPublish(lambdaFn);
+    }
+}
 ```
+
+---
+
+## Construct Takeaways
+
+-   Constructs are just object-oriented abstractions over CloudFormation
+-   Constructs benefit from object-oriented principles like inheritance and composition
+-   Constructs offer quality-of-life improvements like the IAM convenience methods
+
+---
+
+# Useful Techniques
+
+---
+
+## Aspects
+
+```typescript
+class BucketVersioningChecker implements IAspect {
+    public visit(node: IConstruct): void {
+        // See that we're dealing with a CfnBucket
+        if (node instanceof s3.CfnBucket) {
+            // Check for versioning property, exclude the case where the property
+            // can be a token (IResolvable).
+            if (
+                !node.versioningConfiguration ||
+                (!Tokenization.isResolvable(node.versioningConfiguration) &&
+                    node.versioningConfiguration.status !== 'Enabled')
+            ) {
+                // Do ONE of the following:
+                Annotations.of(node).addError('Bucket versioning is not enabled');
+                Annotations.of(node).addWarning('Bucket versioning is not enabled');
+                throw new Error('Bucket versioning is not enabled');
+            }
+        }
+    }
+}
+
+// Later, apply to the stack
+Aspects.of(stack).add(new BucketVersioningChecker());
+```
+
+---
+
+## Aspect Tagging
+
+```typescript
+const app = new cdk.App();
+Tags.of(app).add('Environment', 'Development');
+
+const controlPlane = new cdk.Stack(app, 'ControlPlane');
+Tags.of(controlPlane).add('purpose', 'Access Management');
+```
+
+---
+
+## Referencing Resources defined in another Stack
+
+```typescript
+export class MonitoringPlane extends cdk.Stack {
+    public readonly LogGroup: logs.ILogGroup;
+
+    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+        super(scope, id, props);
+
+        this.LogGroup = new logs.LogGroup(this, 'LogGroup', {
+            logGroupName: 'my-log-group',
+        });
+    }
+}
+```
+
+---
+
+```typescript
+export interface ApplicationPlaneProps extends cdk.StackProps {
+    readonly logGroup: logs.ILogGroup;
+}
+
+export class ApplicationPlane extends cdk.Stack {
+    constructor(scope: Construct, id: string, props: ApplicationPlaneProps) {
+        super(scope, id, props);
+
+        new nodeLambda.NodejsFunction(this, 'my-function', {
+            logGroup: props.logGroup,
+        });
+    }
+}
+```
+
+---
+
+```typescript
+const app = new cdk.App();
+const monitoringPlane = new MonitoringPlane(app, 'MonitoringPlane');
+new ApplicationPlane(app, 'ApplicationPlane', {
+    logGroup: monitoringPlane.LogGroup,
+});
+```
+
+---
+
+## Refrencing Resources defined outside the CDK App
+
+```typescript
+const logGroup = logs.LogGroup.fromLogGroupArn(
+    this,
+    'LogGroup',
+    'arn:aws:logs:us-west-2:123456789012:log-group:/aws/lambda/my-function:*'
+);
+
+new nodeLambda.NodejsFunction(this, 'my-function', {
+    logGroup,
+});
+```
+
+---
+
+## Context Values
+
+```bash
+cdk deploy --context LogGroup=MyLogGroup
+```
+
+```typescript
+const companyName = this.node.tryGetContext('LogGroup');
+
+const logGroup = companyName
+    ? logs.LogGroup.fromLogGroupName(this, 'LogGroup', companyName)
+    : new logs.LogGroup(this, 'LogGroup', { logGroupName: 'default-log-group' });
+
+new nodeLambda.NodejsFunction(this, 'my-function', {
+    logGroup,
+});
+```
+
+---
+
+## Testing
+
+```typescript
+it('should have a DESTROY removal policy', () => {
+    const app = new cdk.App();
+    const stack = new RemovalPolicyStack(app, 'MyTestStack');
+    const template = Template.fromStack(stack);
+
+    template.hasResource('AWS::DynamoDB::Table', {
+        DeletionPolicy: 'Delete',
+    });
+});
+```
+
+---
+
+## Cleaning Up
+
+```bash
+cdk destroy
+```
+
+Some resources may not be deleted by `cdk destroy` based on resource policy. Typically, data-related resources like S3 buckets, RDS instances, etc. are not deleted by default.
+
+```typescript
+// we can set the retention policy explicitly
+const table = new dynamodb.Table(this, 'Table', {
+    partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+});
+```
+
+---
+
+# When to use CDK
+
+When you want to...
+
+-   invest in AWS abstractions over in-code solutions
+-   leverage the power of CloudFormation without the complexity
+-   use a programming language to define your infrastructure
+-   share infrastructure definitions across teams
+-   'Lint' your infrastructure definitions
+
+---
+
+# When NOT to use CDK
+
+When you...
+
+-   work in a team heavily invested in other IaC tools (Terraform, Pulumi, etc.)
+-   work in a team that is not comfortable with programming
+-   are not familiar with the underlying AWS services
+-   are not comfortable with the CDK learning curve
+-   are not comfortable with the CDK's abstraction
+
+---
+
+# Recommendations
+
+1. Understand the AWS Services before provisioning them
+2. Understand the AWS Service billing models before provisioning them
+3. If provisioning an account to learn, secure it immediately and set budget alerts.
+
+---
+
+# Questions?
+
+> "The only stupid question is the one not asked"
+
+# Resources
+
+-   CDK Workshop:
+    https://cdkworkshop.com
+-   AWS CDK Reference Documentation
+    https://docs.aws.amazon.com/cdk/api/v2/
+-   AWS CDK Developer Guide
+    https://docs.aws.amazon.com/cdk/v2/guide

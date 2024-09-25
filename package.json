@@ -10,9 +10,11 @@
         "test": "jest",
         "cdk": "cdk",
         "cdk:clean": "npx rimraf cdk.out",
+        "diagrams": "glob-run mmdc -i **/*.mermaid -e png -t dark -b transparent",
         "presentation:build": "npx @marp-team/marp-cli@latest ./docs/slide-deck.md --html"
     },
     "devDependencies": {
+        "@mermaid-js/mermaid-cli": "^11.2.0",
         "@types/jest": "^29.5.12",
         "@types/node": "20.14.9",
         "@typescript-eslint/eslint-plugin": "^8.6.0",
@@ -22,6 +24,7 @@
         "eslint": "^9.11.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.1",
+        "glob-run": "^0.1.7",
         "jest": "^29.7.0",
         "prettier": "^3.3.3",
         "rimraf": "^6.0.1",

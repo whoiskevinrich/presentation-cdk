@@ -7,8 +7,15 @@ export class DevTipsAppStack extends cdk.Stack {
         super(scope, id, props);
 
         new nodeLambda.NodejsFunction(this, 'handler', {
-            entry: 'lib/app-stack.handler.ts',
+            entry: 'lib/dev-tips-app-stack.handler.ts',
             handler: 'handler',
+            bundling: {
+                minify: true,
+                sourceMap: true,
+                externalModules: ['aws-sdk'],
+                nodeModules: ['axios'],
+                esbuildArgs: { 'log-limit': '0' },
+            },
         });
     }
 }
