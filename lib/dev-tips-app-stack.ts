@@ -12,9 +12,6 @@ export class DevTipsAppStack extends cdk.Stack {
             bundling: {
                 minify: true,
                 sourceMap: true,
-                externalModules: ['aws-sdk'],
-                nodeModules: ['axios'],
-                esbuildArgs: { 'log-limit': '0' },
             },
         });
     }
