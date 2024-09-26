@@ -24,6 +24,10 @@ Sept 2024
 
 ---
 
+# Poll the Audience
+
+---
+
 # Overview
 
 - What is AWS CDK?
